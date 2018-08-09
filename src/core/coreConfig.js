@@ -1,0 +1,2 @@
+const BLOCK_GEN_SPEED = 10;
+const BLOCK_CHECK_INTERVAL = 10;

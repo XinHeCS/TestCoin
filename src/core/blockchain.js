@@ -1,12 +1,14 @@
-const crypto = require('crypto');
+import {SHA256} from '../util/SHA256';
 
 class Block {
-    constructor (number, preHash, data) {
+    constructor (number, preHash, data, difficulty, nonce) {
         this.number = number;
         this.preHash = preHash;
         this.data = data;
         this.timeStamp = new Date().getTime();
-        this.hash = generateHash(this);
+        this.hash = generateBlockHash(this);
+        this.difficulty = difficulty;
+        this.nonce = nonce;
     }
 }
 
@@ -23,7 +25,7 @@ function getBlock(number) {
         return blockChain[number];
     } catch (error) {
         console.error(error);
-        return null;
+        return undefined;
     }
 }
 
@@ -33,24 +35,23 @@ function getBlock(number) {
  * @param {Block} block The block to be hashed
  * @returns {string} A hex-fy hash string
  */
-function generateHash(block) {
-    const hash = crypto.createHash('sha256');
-    let val = block.number + block.preHash + block.timeStamp + block.data;
+function generateBlockHash(block) {    
+    let val = block.number + block.preHash + block.timeStamp 
+    + block.data + block.difficulty;
 
-    hash.update(val);
-
-    return hash.digest('hex');
+    return SHA256(val);
 }
 
 /**
- * Generate a new block added to the top of block chain
+ * Generate a new un-minded block added to the top of block chain
  * @param {any} data Current block data
  * @returns {Block} The new block
  */
 function generateNewBlock(data) {
     const topBlock = getLatestBlock();
 
-    return new Block(topBlock.number + 1, topBlock.hash, data);
+    return new Block(topBlock.number + 1, topBlock.hash, data, 
+        topBlock.difficulty, null);
 }
 
 /**
@@ -61,12 +62,12 @@ function generateNewBlock(data) {
 function isValidBlock(block) {
     const preBLock = getBlock(block.number - 1);
 
-    if (preBLock !== null) {
+    if (preBLock !== undefined) {
         if (preBLock.hash !== block.preHash) {
             console.error('Unmatched previous hash!');
             return false;
         }
-        else if (block.hash !== generateHash(block)) {
+        else if (block.hash !== generateBlockHash(block)) {
             console.error('Unmatched block hash!');
             return false;
         }
@@ -76,3 +77,11 @@ function isValidBlock(block) {
 
     return false;
 }
+
+module.exports = {
+    Block,
+    getLatestBlock,
+    getBlock,
+    generateNewBlock,
+    isValidBlock
+};
