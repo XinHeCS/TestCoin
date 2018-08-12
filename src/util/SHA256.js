@@ -8,10 +8,7 @@ function SHA256(data) {
     const hash = crypto.createHash('sha256');
     hash.update(data);
 
-    return '0x' + hash.digest('hex');
+    return hash.digest('hex');
 }
 
-
-module.exports = {
-    SHA256
-}
+module.exports = SHA256;

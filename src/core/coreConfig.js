@@ -1,2 +1,7 @@
 const BLOCK_GEN_SPEED = 10;
 const BLOCK_CHECK_INTERVAL = 10;
+
+module.exports = {
+    BLOCK_CHECK_INTERVAL,
+    BLOCK_GEN_SPEED
+}

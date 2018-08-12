@@ -1,19 +1,18 @@
-import {SHA256} from '../util/SHA256';
+const SHA256 = require('../util/SHA256');
 
 class Block {
-    constructor (number, preHash, data, difficulty, nonce) {
+    constructor (number, data, difficulty, nonce) {
         this.number = number;
-        this.preHash = preHash;
+        this.preHash = null;
         this.data = data;
         this.timeStamp = new Date().getTime();
-        this.hash = generateBlockHash(this);
         this.difficulty = difficulty;
-        this.nonce = nonce;
+        this.nonce = null;
     }
 }
 
 let blockChain = [
-    new Block(0, '', [1, 2, 3])
+    new Block(0, [1, 2, 3], 16, null)
 ];
 
 function getLatestBlock() {
@@ -37,7 +36,7 @@ function getBlock(number) {
  */
 function generateBlockHash(block) {    
     let val = block.number + block.preHash + block.timeStamp 
-    + block.data + block.difficulty;
+    + block.data + block.difficulty + block.nonce;
 
     return SHA256(val);
 }
@@ -50,8 +49,8 @@ function generateBlockHash(block) {
 function generateNewBlock(data) {
     const topBlock = getLatestBlock();
 
-    return new Block(topBlock.number + 1, topBlock.hash, data, 
-        topBlock.difficulty, null);
+    return new Block(topBlock.number + 1, data, 
+        topBlock.difficulty);
 }
 
 /**
