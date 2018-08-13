@@ -9,7 +9,7 @@ class Miner {
         this._handle = null;
     }
 
-    /**========== private methods ========== */
+    /* ========== private methods ========== */
 
     /**
      * Solve the puzzle with this block
@@ -23,9 +23,11 @@ class Miner {
                 answer = SHA256(block.number + block.preHash + 
                     block.data + block.difficulty + nonce.toString());
                 ++nonce;
+                // console.log('Test: ' + nonce + '\t' + 'result: ' + answer);
             } while (!this._matchDifficulty(answer, block.difficulty));
 
             block.nonce = nonce;
+            console.log('Test: ' + nonce + '\t' + 'result: ' + answer);
         }
         
         return block;
@@ -60,7 +62,7 @@ class Miner {
      * @param {Block} latestBlock The latest block
      */
     _adjustDifficulty(latestBlock) {
-        let preBlock = bc.getBlock(latestBlock - config.BLOCK_CHECK_INTERVAL);
+        let preBlock = bc.getBlock(latestBlock.number - config.BLOCK_CHECK_INTERVAL);
         let idealTimeSpan = config.BLOCK_CHECK_INTERVAL * 
             config.BLOCK_GEN_SPEED;
         let actualTimeSpan = latestBlock.timeStamp - preBlock.timeStamp;
@@ -72,10 +74,13 @@ class Miner {
             actualTimeSpan = idealTimeSpan * 4;
         }
 
-        return latestBlock.difficulty * (actualTimeSpan / idealTimeSpan);
+        // Adjust difficulty according to formula
+        // 2^(D_n - D_o) = T_n / T_o =>
+        // D_n = D_o + log2(T_n / T_o)
+        return latestBlock.difficulty + Math.log2(idealTimeSpan / actualTimeSpan);
     }
 
-    /**========== public methods ========== */
+    /* ========== public methods ========== */
 
     /**
      * Start mining
@@ -85,11 +90,14 @@ class Miner {
 
         console.log('Start mining at ' + startTime);
 
-        let newBlock = bc.generateNewBlock('Fuck');
+        let newBlock = bc.generateNewBlock('Okay');
         newBlock.difficulty = this._getDifficulty();
+        console.log(newBlock.difficulty);
         newBlock = this._solve(newBlock);
 
         console.log('Total mining ' + (new Date().getTime() - startTime) + 'ms');
+
+        bc.addBlock(newBlock);
 
         this._handle = setTimeout(this.start.bind(this), 0);
     }

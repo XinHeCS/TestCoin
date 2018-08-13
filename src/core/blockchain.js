@@ -1,9 +1,9 @@
 const SHA256 = require('../util/SHA256');
 
 class Block {
-    constructor (number, data, difficulty, nonce) {
+    constructor (number, preHash, data, difficulty, nonce) {
         this.number = number;
-        this.preHash = null;
+        this.preHash = preHash;
         this.data = data;
         this.timeStamp = new Date().getTime();
         this.difficulty = difficulty;
@@ -12,7 +12,7 @@ class Block {
 }
 
 let blockChain = [
-    new Block(0, [1, 2, 3], 16, null)
+    new Block(0, 0, [1, 2, 3], 16, null)
 ];
 
 function getLatestBlock() {
@@ -48,8 +48,9 @@ function generateBlockHash(block) {
  */
 function generateNewBlock(data) {
     const topBlock = getLatestBlock();
+    const preHash = generateBlockHash(topBlock);
 
-    return new Block(topBlock.number + 1, data, 
+    return new Block(topBlock.number + 1, preHash, data, 
         topBlock.difficulty);
 }
 
@@ -77,10 +78,19 @@ function isValidBlock(block) {
     return false;
 }
 
+/**
+ * Add new block into the block chain
+ * @param {Block} block The new block to be added into the block chain
+ */
+function addBlock(block) {
+    blockChain.push(block);
+}
+
 module.exports = {
     Block,
     getLatestBlock,
     getBlock,
     generateNewBlock,
-    isValidBlock
+    isValidBlock,
+    addBlock
 };
