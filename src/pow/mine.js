@@ -1,4 +1,4 @@
-const bc = require('../core/blockchain');
+const Block = require('../core/block');
 const config = require('../core/coreConfig');
 const SHA256 = require('../util/SHA256');
 const Helper = require('../util/helper');
