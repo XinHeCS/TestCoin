@@ -1,0 +1,16 @@
+{
+  "name": "testcoin",
+  "version": "1.0.0",
+  "description": "A naive blockchain",
+  "main": "test.js",
+  "dependencies": {
+    "level": "^4.0.0",
+    "leveldown": "^4.0.1"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "node ./src/test.js"
+  },
+  "author": "XinHe",
+  "license": "MIT"
+}
