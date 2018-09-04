@@ -15,13 +15,21 @@ class Block {
      * using sha256 algorithm
      * @returns {string} A hex-fy hash string
      */
-    generateBlockHash() {    
+    getHash() {    
         let val = this.number + this.preHash + this.timeStamp + 
         this.data + this.difficulty + this.nonce;
 
         return SHA256(val);
     }
 }
+
+Block.instance = function(obj) {
+    return new Block(obj.number,
+                    obj.preHash,
+                    obj.data,
+                    obj.difficulty,
+                    obj.nonce);
+};
 
 
 module.exports = Block;

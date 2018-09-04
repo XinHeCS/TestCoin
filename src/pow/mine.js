@@ -52,11 +52,10 @@ class Miner {
         return answer.startsWith(pattern);
     }
 
-    async _getDifficulty() {
-        let latestBlock = await this.blcHandle.getLatestBlock();
+    async _getDifficulty(latestBlock) {
         if (latestBlock.number % config.BLOCK_CHECK_INTERVAL === 0 &&
             latestBlock.number !== 0) {
-            return this._adjustDifficulty(latestBlock);
+            return await this._adjustDifficulty(latestBlock);
         }
         else {
             return latestBlock.difficulty;
@@ -94,16 +93,23 @@ class Miner {
      * Start mining
      */
     async start() {
-        let startTime = new Date().getTime();
+        let startTime = new Date().getTime();        
 
+        let latestBlock = await this.blcHandle.getLatestBlock();
+        let newBlock = new Block(latestBlock.number + 1,
+                                latestBlock.preHash,
+                                "Okay!",
+                                latestBlock.difficulty,
+                                null);
+        newBlock.difficulty = await this._getDifficulty(latestBlock);
+        newBlock.preHash = latestBlock.getHash();
+
+        // Mining process
         console.log('Start mining at ' + startTime);
-
-        let newBlock = bc.generateNewBlock('Okay');
-        newBlock.difficulty = await this._getDifficulty();
-        console.log(newBlock.difficulty);
+        console.log(newBlock.difficulty);        
         newBlock = this._solve(newBlock);
-
         console.log('Total mining ' + (new Date().getTime() - startTime) + 'ms');
+        // End ming
 
         await this.blcHandle.addBlock(newBlock);
 
@@ -116,6 +122,7 @@ class Miner {
     stop() {
         if (this.minerHandle) {
             clearTimeout(this.minerHandle);
+            this.minerHandle = null;
         }
     }
 }

@@ -13,10 +13,16 @@ class BlockChain {
     constructor(chainDB) {
         // A reference to block chain's data base
         this.db = level(chainDB);
+        // Symbol to control whether to 
+        // invoke _checkChain() or not
+        this.check = true;
     }
 
-    async getLatestBlock() {        
-        return await this._readLatestBlock();
+    async getLatestBlock() {   
+        if (this.check) {
+            await this._checkChain();
+        }             
+        return await this._readBlockHash(Config.TOP_BLOCK);
     }
 
     /**
@@ -24,6 +30,9 @@ class BlockChain {
      * @param {Number} number Block index
      */
     async getBlock(number) {        
+        if (this.check) {
+            await this._checkChain();
+        }       
         return await this._readBlock(number);
     }
 
@@ -32,6 +41,10 @@ class BlockChain {
      * @param {string} hash Hash value of s block
      */
     async getBlockByHash(hash) {
+        if (this.check) {
+            await this._checkChain();
+        }
+        // return await this._readBlockHash(hash);
         return await this._readBlockHash(hash);
     }
 
@@ -41,19 +54,35 @@ class BlockChain {
      * into the block chain
      */
     async addBlock(block) {
-        try {
-            let blockStr = JSON.stringify(block)
-            await this.db.put(block.generateBlockHash(), blockStr);
-            await this.db.batch()
-                        .put(Config.TOP_BLOCK, blockStr)
-                        .write();
-            console.log('Add new block: ' + block.number + ' ...');
-        } catch (error) {
-            console.log(error);
-        }
+        if (this.check) {
+            await this._checkChain();
+        }       
+        return await this._writeBlock(block);
     }
 
     // ================ Internal method(s) ==================
+
+    /**
+     * Check the status of current block chain.
+     * If there exist no genesis block,
+     * we will generate one for it.
+     * Generally, this function shall 
+     * only be invoked once and that's 
+     * when the first time current block chain 
+     * is accessed.
+     */
+    async _checkChain () {
+        // CLose the check symbol
+        this.check = false;
+        try {
+            await this._readBlockHash(Config.TOP_BLOCK);
+        } catch (error) {
+            let genesis = new Block(0, '0', 
+                                    'Test Coin', Config.BLOCK_INIT_DIFFICULTY,
+                                    null);
+            await this._writeBlock(genesis);
+        }
+    }
 
     _readBlock(number) {
         let blockChainDB = this.db;
@@ -68,7 +97,7 @@ class BlockChain {
             .on('data', (data) => {
                 let block = JSON.parse(data);
                 if (block.number === number) {
-                    resolve(block);
+                    resolve(Block.instance(block));
                     blockStream.destroy("Close data base.");
                 }
             })
@@ -84,38 +113,46 @@ class BlockChain {
     _readBlockHash(hash) {
         let blockChainDB = this.db;
         return new Promise(function (resolve, reject) {
-            let hashStream = blockChainDB.createReadStream();
-
-            hashStream
-            .on('data', (data) => {
-                if (data.key === hash) {
-                    resolve(JSON.parse(data.value));
-                    blockStr.destroy("Close data base.");
-                }
-            })
-            .on('error', (err) => {
-                reject(err);
-            })
-            .on('end', () => {
-                reject("Didn't find block " + hash);
-            });
-        });
-    }
-
-    _readLatestBlock() {
-        let blockChainDB = this.db;
-        return new Promise(function (resolve, reject) {
-            blockChainDB.get(Config.TOP_BLOCK)
+            blockChainDB.get(hash)
             .then(
                 function (data) {
                     let block = JSON.parse(data);
-                    resolve(block);
+                    resolve(Block.instance(block));
                 },
                 function (err) {
                     reject(err);
                 }
             );
-        })
+        });
+    }
+
+    // _readLatestBlock() {
+    //     let blockChainDB = this.db;
+    //     return new Promise(function (resolve, reject) {
+    //         blockChainDB.get(Config.TOP_BLOCK)
+    //         .then(
+    //             function (data) {
+    //                 let block = JSON.parse(data);
+    //                 resolve(block);
+    //             },
+    //             function (err) {
+    //                 reject(err);
+    //             }
+    //         );
+    //     })
+    // }
+
+    /**
+     * Write new block into levelDB
+     * @param {Block} block New block to write into 
+     *                      data base.
+     */
+    _writeBlock(block) {
+    let blockStr = JSON.stringify(block);
+        return Promise.all([
+            this.db.put(block.getHash(), blockStr),
+            this.db.put(Config.TOP_BLOCK, blockStr)
+        ]);
     }
 }
 

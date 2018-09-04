@@ -17,6 +17,7 @@
 // return nums.length;
 const BlockChain = require('./core/blockchain');
 // const Config = require('./core/coreConfig');
+const Miner = require('./pow/mine');
 
 let dataBase = './DataBase/chain.dat';
 let blc = new BlockChain(dataBase);
@@ -31,13 +32,15 @@ let blc = new BlockChain(dataBase);
 
 // let ret = blc.getBlock(Config.TOP_BLOCK);
 let ret = blc.getLatestBlock();
+let miner = new Miner(blc);
 
 ret.then(
     function resolve(block) {
         console.log('Fetch block : ' + block.number);
         console.log('Data : ' + block.data);
+        // miner.start();
     },
-    function reject(err) {  
+    function reject(err) {
         console.log(err);
     }
 );
