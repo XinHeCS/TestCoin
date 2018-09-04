@@ -1,12 +1,19 @@
 const Block = require('../core/block');
+const BlockChain = require('../core/blockchain');
 const config = require('../core/coreConfig');
 const SHA256 = require('../util/SHA256');
 const Helper = require('../util/helper');
 
 class Miner {
 
-    constructor() {
-        this._handle = null;
+    /**
+     * Contractor of miner instance
+     * @param {BlockChain} db An instance of current attached
+     * block chain.
+     */
+    constructor(db) {
+        this.minerHandle = null;
+        this.blcHandle = db;
     }
 
     /* ========== private methods ========== */
@@ -45,8 +52,8 @@ class Miner {
         return answer.startsWith(pattern);
     }
 
-    _getDifficulty() {
-        let latestBlock = bc.getLatestBlock();
+    async _getDifficulty() {
+        let latestBlock = await this.blcHandle.getLatestBlock();
         if (latestBlock.number % config.BLOCK_CHECK_INTERVAL === 0 &&
             latestBlock.number !== 0) {
             return this._adjustDifficulty(latestBlock);
@@ -61,8 +68,9 @@ class Miner {
      * block
      * @param {Block} latestBlock The latest block
      */
-    _adjustDifficulty(latestBlock) {
-        let preBlock = bc.getBlock(latestBlock.number - config.BLOCK_CHECK_INTERVAL);
+    async _adjustDifficulty(latestBlock) {
+        let preBlock = await this.blcHandle
+                                .getBlock(latestBlock.number - config.BLOCK_CHECK_INTERVAL);
         let idealTimeSpan = config.BLOCK_CHECK_INTERVAL * 
             config.BLOCK_GEN_SPEED;
         let actualTimeSpan = latestBlock.timeStamp - preBlock.timeStamp;
@@ -85,29 +93,29 @@ class Miner {
     /**
      * Start mining
      */
-    start() {
+    async start() {
         let startTime = new Date().getTime();
 
         console.log('Start mining at ' + startTime);
 
         let newBlock = bc.generateNewBlock('Okay');
-        newBlock.difficulty = this._getDifficulty();
+        newBlock.difficulty = await this._getDifficulty();
         console.log(newBlock.difficulty);
         newBlock = this._solve(newBlock);
 
         console.log('Total mining ' + (new Date().getTime() - startTime) + 'ms');
 
-        bc.addBlock(newBlock);
+        await this.blcHandle.addBlock(newBlock);
 
-        this._handle = setTimeout(this.start.bind(this), 0);
+        this.minerHandle = setTimeout(this.start.bind(this), 0);
     }
 
     /**
      * Stop the mining process
      */
     stop() {
-        if (this._handle) {
-            clearTimeout(this._handle);
+        if (this.minerHandle) {
+            clearTimeout(this.minerHandle);
         }
     }
 }

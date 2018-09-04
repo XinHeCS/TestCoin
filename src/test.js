@@ -16,6 +16,7 @@
 
 // return nums.length;
 const BlockChain = require('./core/blockchain');
+// const Config = require('./core/coreConfig');
 
 let dataBase = './DataBase/chain.dat';
 let blc = new BlockChain(dataBase);
@@ -28,15 +29,15 @@ let blc = new BlockChain(dataBase);
 //     blc.addBlock(block);
 // }
 
-let ret = blc.getBlock(6);
+// let ret = blc.getBlock(Config.TOP_BLOCK);
+let ret = blc.getLatestBlock();
 
 ret.then(
     function resolve(block) {
-        console.log('Fetch block : ' + block.number + ' ...');
+        console.log('Fetch block : ' + block.number);
         console.log('Data : ' + block.data);
     },
-    function reject(err) {
-        console.log('Fail to find block');
+    function reject(err) {  
         console.log(err);
     }
 );
@@ -74,3 +75,4 @@ ret.then(
 //         console.log(err);
 //     }
 // );
+

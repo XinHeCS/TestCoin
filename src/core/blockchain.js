@@ -3,7 +3,7 @@ const Block = require('./block');
 const Config = require('./coreConfig');
 
 /**
- * A manager class to 
+ * A manager class to block chain
  */
 class BlockChain {
     /**
@@ -11,29 +11,28 @@ class BlockChain {
      * @param {string} chainDB The path of current block chain data
      */
     constructor(chainDB) {
+        // A reference to block chain's data base
         this.db = level(chainDB);
     }
 
-    async getLatestBlock() {
-        try {
-            return await this.db.get(Config.TOP_BLOCK);
-        } catch (error) {
-            console.log(error);
-            return undefined;
-        }
+    async getLatestBlock() {        
+        return await this._readLatestBlock();
     }
 
     /**
      * Query a block according to it's block number
      * @param {Number} number Block index
      */
-    async getBlock(number) {
-        try {
-            return await this._readBlock(number);
-        } catch (error) {
-            console.error(error);
-            return undefined;
-        }
+    async getBlock(number) {        
+        return await this._readBlock(number);
+    }
+
+    /**
+     * Get a block from data base according to it's hash value
+     * @param {string} hash Hash value of s block
+     */
+    async getBlockByHash(hash) {
+        return await this._readBlockHash(hash);
     }
 
     /**
@@ -42,13 +41,19 @@ class BlockChain {
      * into the block chain
      */
     async addBlock(block) {
-        try {            
-            await this.db.put(block.number, JSON.stringify(block));
+        try {
+            let blockStr = JSON.stringify(block)
+            await this.db.put(block.generateBlockHash(), blockStr);
+            await this.db.batch()
+                        .put(Config.TOP_BLOCK, blockStr)
+                        .write();
             console.log('Add new block: ' + block.number + ' ...');
         } catch (error) {
             console.log(error);
         }
     }
+
+    // ================ Internal method(s) ==================
 
     _readBlock(number) {
         let blockChainDB = this.db;
@@ -58,15 +63,59 @@ class BlockChain {
             // back the target block through
             // this promise
             let blockStream = blockChainDB.createValueStream();
-            blockStream.on('data', function (data) {
+
+            blockStream
+            .on('data', (data) => {
                 let block = JSON.parse(data);
                 if (block.number === number) {
                     resolve(block);
+                    blockStream.destroy("Close data base.");
                 }
+            })
+            .on('error', (err) => { 
+                reject(err); 
+            })
+            .on('end', () => { 
+                reject("Didn't find block " + number); 
             });
-
-            blockStream.on('error', (err) => { reject(err); });
         });
+    }
+
+    _readBlockHash(hash) {
+        let blockChainDB = this.db;
+        return new Promise(function (resolve, reject) {
+            let hashStream = blockChainDB.createReadStream();
+
+            hashStream
+            .on('data', (data) => {
+                if (data.key === hash) {
+                    resolve(JSON.parse(data.value));
+                    blockStr.destroy("Close data base.");
+                }
+            })
+            .on('error', (err) => {
+                reject(err);
+            })
+            .on('end', () => {
+                reject("Didn't find block " + hash);
+            });
+        });
+    }
+
+    _readLatestBlock() {
+        let blockChainDB = this.db;
+        return new Promise(function (resolve, reject) {
+            blockChainDB.get(Config.TOP_BLOCK)
+            .then(
+                function (data) {
+                    let block = JSON.parse(data);
+                    resolve(block);
+                },
+                function (err) {
+                    reject(err);
+                }
+            );
+        })
     }
 }
 
