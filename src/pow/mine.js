@@ -106,14 +106,14 @@ class Miner {
 
         // Mining process
         console.log('Start mining at ' + startTime);
-        console.log(newBlock.difficulty);        
+        // console.log(newBlock.difficulty); 
         newBlock = this._solve(newBlock);
         console.log('Total mining ' + (new Date().getTime() - startTime) + 'ms');
         // End ming
 
         await this.blcHandle.addBlock(newBlock);
 
-        this.minerHandle = setTimeout(this.start.bind(this), 0);
+        // this.minerHandle = setTimeout(this.start.bind(this), 0);
     }
 
     /**
