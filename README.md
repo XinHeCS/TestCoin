@@ -19,18 +19,18 @@ A toy blockchain in JavaScript. In this project, I will roughly impalement some 
 
 - [x] BitCoin Pow algorithm
 - [x] Miner process(CPU only)
-- [] Multi thread mining
+- [ ] Multi thread mining
 
 # Transaction
 
-- [] Basic transaction module
-- [] Verity module
-- [] Trade module
+- [ ] Basic transaction module
+- [ ] Verity module
+- [ ] Trade module
 
 # p2p
 
-- [] p2p connection
-- [] Fork block chain
+- [ ] p2p connection
+- [ ] Fork block chain
 
 # Licence
 
