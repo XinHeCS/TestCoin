@@ -2,9 +2,9 @@
 A toy blockchain in JavaScript. In this project, I will roughly impalement some core features of a traditional block chain. The main modules of 
 <b>TestCoin</b> are as follows:
 
-* <a href='#Core'>Core module</a>
-* <a href='#Pow'>Pow module</a>
-* <a href='#Transaction'>Transaction module</a>
+* <a href='#core'>Core module</a>
+* <a href='#pow'>Pow module</a>
+* <a href='#transaction'>Transaction module</a>
 * <a href='#p2p'>p2p module</a>
 
 
