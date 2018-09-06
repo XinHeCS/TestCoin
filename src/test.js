@@ -1,59 +1,3 @@
-const BlockChain = require('./core/blockchain');
-const Config = require('./core/coreConfig');
-const Block = require('./core/block');
-const Miner = require('./pow/mine');
-const testCoin = require('repl');
-const vm = require('vm');
-
-function testEval(cmd, content, filename, callback) {
-    let result;
-    try {
-        result = vm.runInContext(cmd, content);
-    } catch (error) {
-        if (isRecoverableError(error)) {
-            return callback(new repl.Recoverable(error));
-        }
-        else {
-            callback(error);
-        }
-    }
-
-    if (result instanceof Promise) {
-        result.then(
-            function fulfill(data) {
-                callback(null, data);
-            },
-            function reject(err) {
-                callback(err);
-            }
-        );
-    }
-    else {
-        callback(null, result);
-    }
-}
-  
-function isRecoverableError(error) {
-    if (error.name === 'SyntaxError') {
-        return /^(Unexpected end of input|Unexpected token)/.test(error.message);
-    }
-    return false;
-}
-
-let tesInstance = testCoin.start({
-    prompt : '-> ',
-    eval : testEval
-});
-
-let dataBase = './DataBase/chain.dat';
-let blc = new BlockChain(dataBase);
-
-tesInstance.context.Config = Config;
-tesInstance.context.Block = Block;
-
-tesInstance.context.chain = blc;
-tesInstance.context.miner = new Miner(blc);
-
 
 
 // for (let i = 0; i < 10; ++i) {
@@ -112,4 +56,71 @@ tesInstance.context.miner = new Miner(blc);
 //         console.log(err);
 //     }
 // );
+
+// const readLine = require('readline');
+
+// let rl = readLine.createInterface({
+//     input : process.stdin,
+//     output : process.stdout
+// });
+
+// process.stdin.on('data', (data) =>{
+//     console.log('*'.repeat(2));
+// })
+
+// rl.on('line', (line) => {
+//     console.log(`Received: ${line}`);
+// });
+
+const ECDSA = require('./util/ECDSA');
+const Wallet = require('./wallet/wallet');
+const path = require('path');
+const fs = require('fs');
+const util = require('util');
+
+const wallet = new Wallet();
+
+// ECDSA.createPriKey(wallet.priKeyPath, wallet.pubKeyPath)
+// .then(
+//     () => {
+//         console.log("Success!");
+//     },
+//     (err) => {
+//         console.log(err);
+//     }
+// );
+
+// ECDSA.sig(wallet.priKeyPath, "Fuck you, man!!")
+// .then(
+//     function (data) {
+//         console.log(`Sig: ${data}`);
+//         return data;
+//     }
+// )
+// .then(
+//     function (data) {
+//         return ECDSA.verify(wallet.pubKeyPath, "Fuck you, man!", data);
+//     }
+// )
+// .then(
+//     function () {
+//         console.log(`Pass!`);
+//     },
+//     function (err) {
+//         console.log(err);
+//     }
+// );
+
+wallet.getAddress()
+.then(
+    (ret) => {
+        console.log(`Address: ${ret}`);
+    },
+    (err) => {
+        console.log(err);
+    }
+);
+
+
+
 
