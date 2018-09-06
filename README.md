@@ -23,6 +23,8 @@ A toy blockchain in JavaScript. In this project, I will roughly impalement some 
 
 # Transaction
 
+- [x] Crypto module
+- [ ] Wallet module
 - [ ] Basic transaction module
 - [ ] Verity module
 - [ ] Trade module
