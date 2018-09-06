@@ -73,12 +73,12 @@
 // });
 
 const ECDSA = require('./util/ECDSA');
-const Wallet = require('./wallet/wallet');
+const Account = require('./wallet/wallet');
 const path = require('path');
 const fs = require('fs');
 const util = require('util');
 
-const wallet = new Wallet();
+const account = new Account();
 
 // ECDSA.createPriKey(wallet.priKeyPath, wallet.pubKeyPath)
 // .then(
@@ -111,7 +111,7 @@ const wallet = new Wallet();
 //     }
 // );
 
-wallet.getAddress()
+account.getAddress()
 .then(
     (ret) => {
         console.log(`Address: ${ret}`);

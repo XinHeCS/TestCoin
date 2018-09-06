@@ -6,7 +6,7 @@ const nodeUtil = require('util');
 /**
  * Create a private key from scratch
  * @param {string} priKeyPath 
- * @param {*} pubKeyPath 
+ * @param {string} pubKeyPath 
  */
 async function createPriKey(priKeyPath, pubKeyPath) {
     // A new random 32-byte private key.
@@ -21,10 +21,10 @@ async function createPriKey(priKeyPath, pubKeyPath) {
 /**
  * Signature the string with current unlocked account
  * @param {string} priKeyPath Directory where priKey is stored
- * @param {string} str The string to be signatured by ECDSA
+ * @param {string | Buffer | ArrayBuffer} msg The string to be signatured by ECDSA
  */
-async function sig(priKeyPath, str) {
-    let hashMsg = crypto.createHash('SHA256').update(str).digest();
+async function sig(priKeyPath, msg) {
+    let hashMsg = crypto.createHash('SHA256').update(msg).digest();
     let priKey = await readFile(priKeyPath);
     
     let result = await eccrypto.sign(priKey, hashMsg);
@@ -35,8 +35,8 @@ async function sig(priKeyPath, str) {
 /**
  * Verify the sig of msg with publicKey in pubKeyPath
  * @param {string} pubKeyPath Directory where pubKey is stored
- * @param {string} msg Message to be verified
- * @param {string} sig Signature
+ * @param {string | Buffer | ArrayBuffer} msg Message to be verified
+ * @param {string | Buffer | ArrayBuffer} sig Signature
  */
 async function verify(pubKeyPath, msg, sig) {
     let hashMsg = crypto.createHash('SHA256').update(msg).digest();

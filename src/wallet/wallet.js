@@ -9,7 +9,7 @@ const readFile = nodeUtil.promisify(fs.readFile);
 const writeFile = nodeUtil.promisify(fs.writeFile);
 const stat = nodeUtil.promisify(fs.stat);
 
-class Wallet {
+class Account {
     constructor() {
         // this.accountHandle = level('../../DataBase/accounts.dat');
         // this.unlockAcc = null;
@@ -50,4 +50,4 @@ class Wallet {
     }
 }
 
-module.exports = Wallet;
+module.exports = Account;
