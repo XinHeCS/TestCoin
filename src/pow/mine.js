@@ -8,12 +8,12 @@ class Miner {
 
     /**
      * Contractor of miner instance
-     * @param {BlockChain} db An instance of current attached
+     * @param {BlockChain} blc An instance of current attached
      * block chain.
      */
-    constructor(db) {
-        this.minerHandle = null;
-        this.blcHandle = db;
+    constructor(blc) {
+        this._minerHandle = null;
+        this._blcHandle = blc;
     }
 
     /* ========== private methods ========== */
@@ -68,7 +68,7 @@ class Miner {
      * @param {Block} latestBlock The latest block
      */
     async _adjustDifficulty(latestBlock) {
-        let preBlock = await this.blcHandle
+        let preBlock = await this._blcHandle
                                 .getBlock(latestBlock.number - config.BLOCK_CHECK_INTERVAL);
         let idealTimeSpan = config.BLOCK_CHECK_INTERVAL * 
             config.BLOCK_GEN_SPEED;
@@ -95,7 +95,7 @@ class Miner {
     async start() {
         let startTime = new Date().getTime();        
 
-        let latestBlock = await this.blcHandle.getLatestBlock();
+        let latestBlock = await this._blcHandle.getLatestBlock();
         let newBlock = new Block(latestBlock.number + 1,
                                 latestBlock.preHash,
                                 "Okay!",
@@ -111,7 +111,7 @@ class Miner {
         console.log('Total mining ' + (new Date().getTime() - startTime) + 'ms');
         // End ming
 
-        await this.blcHandle.addBlock(newBlock);
+        await this._blcHandle.addBlock(newBlock);
 
         // this.minerHandle = setTimeout(this.start.bind(this), 0);
     }
@@ -120,9 +120,9 @@ class Miner {
      * Stop the mining process
      */
     stop() {
-        if (this.minerHandle) {
-            clearTimeout(this.minerHandle);
-            this.minerHandle = null;
+        if (this._minerHandle) {
+            clearTimeout(this._minerHandle);
+            this._minerHandle = null;
         }
     }
 }

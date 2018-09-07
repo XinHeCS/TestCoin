@@ -9,17 +9,33 @@ class BlockChain {
     /**
      * Initialize a certain block chain
      * @param {string} chainDB The path of current block chain data
+     * @param {string} txDB The path of current transactions data
+     * @param {string} txIndexDb The path of current tx index data
      */
-    constructor(chainDB) {
+    constructor(chainDB, txDB, txIndexDb) {
         // A reference to block chain's data base
-        this.db = level(chainDB);
+        this._db = level(chainDB);
+        this._txdb = level(txDB);
+        this._txIndexdb = level(txIndexDb);
         // Symbol to control whether to 
         // invoke _checkChain() or not
-        this.check = true;
+        this._check = true;
+    }
+
+    getBlocksHandle() {
+        return this._db;
+    }
+
+    getTxHandle() {
+        return this._txdb;
+    }
+
+    getTxIndexHandle() {
+        return this._txIndexdb;
     }
 
     async getLatestBlock() {   
-        if (this.check) {
+        if (this._check) {
             await this._checkChain();
         }             
         return await this._readBlockHash(Config.TOP_BLOCK);
@@ -30,7 +46,7 @@ class BlockChain {
      * @param {Number} number Block index
      */
     async getBlock(number) {        
-        if (this.check) {
+        if (this._check) {
             await this._checkChain();
         }       
         return await this._readBlock(number);
@@ -41,7 +57,7 @@ class BlockChain {
      * @param {string} hash Hash value of s block
      */
     async getBlockByHash(hash) {
-        if (this.check) {
+        if (this._check) {
             await this._checkChain();
         }
         // return await this._readBlockHash(hash);
@@ -54,7 +70,7 @@ class BlockChain {
      * into the block chain
      */
     async addBlock(block) {
-        if (this.check) {
+        if (this._check) {
             await this._checkChain();
         }       
         return await this._writeBlock(block);
@@ -73,7 +89,7 @@ class BlockChain {
      */
     async _checkChain () {
         // CLose the check symbol
-        this.check = false;
+        this._check = false;
         try {
             await this._readBlockHash(Config.TOP_BLOCK);
         } catch (error) {
@@ -85,7 +101,7 @@ class BlockChain {
     }
 
     _readBlock(number) {
-        let blockChainDB = this.db;
+        let blockChainDB = this._db;
         return new Promise(function (resolve, reject) {
             // Read values from data base
             // and when it finishes, we will return 
@@ -111,7 +127,7 @@ class BlockChain {
     }
 
     _readBlockHash(hash) {
-        let blockChainDB = this.db;
+        let blockChainDB = this._db;
         return new Promise(function (resolve, reject) {
             blockChainDB.get(hash)
             .then(
@@ -150,8 +166,8 @@ class BlockChain {
     _writeBlock(block) {
     let blockStr = JSON.stringify(block);
         return Promise.all([
-            this.db.put(block.getHash(), blockStr),
-            this.db.put(Config.TOP_BLOCK, blockStr)
+            this._db.put(block.getHash(), blockStr),
+            this._db.put(Config.TOP_BLOCK, blockStr)
         ]);
     }
 }

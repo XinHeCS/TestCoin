@@ -73,7 +73,7 @@
 // });
 
 const ECDSA = require('./util/ECDSA');
-const Account = require('./wallet/wallet');
+const Account = require('./wallet/account');
 const path = require('path');
 const fs = require('fs');
 const util = require('util');
@@ -111,14 +111,29 @@ const account = new Account();
 //     }
 // );
 
-account.getAddress()
-.then(
-    (ret) => {
-        console.log(`Address: ${ret}`);
-    },
-    (err) => {
-        console.log(err);
+// account.getAddress()
+// .then(
+//     (ret) => {
+//         console.log(`Address: ${ret}`);
+//     },
+//     (err) => {
+//         console.log(err);
+//     }
+// );
+
+async function test(condition) {
+    if (condition) {
+        throw new Error("Fuck");
     }
+    else {
+        return 123;
+    }
+}
+
+test(true)
+.then(
+    () => console.log('true!'),
+    () => console.log('false!')
 );
 
 
