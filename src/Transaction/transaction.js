@@ -86,7 +86,8 @@ class Transaction {
     }
 
     /**
-     * Get the values of txIn
+     * Get the values of txIn and also 
+     * check signature at the same time
      * @param {BlockChain} chain
      */
     async getValueIn(chain) {
@@ -97,6 +98,8 @@ class Transaction {
             let ret = 0;
             for (let txIn of this.vin) {
                 let preTx = await chain.getTransaction(txIn.preTx);
+                await txIn.script.checkAddress(preTx.vout[txIn.index].address);
+                await txIn.script.verify();
                 ret += preTx.vout[txIn.index].value;
             }
             return ret;
@@ -123,12 +126,16 @@ class Transaction {
         if (this.isCoinBase()) {
             return true;
         }
-        // Check budget balance
+        // Check budget balance and signature
         let value = 0;
         value += await this.getValueIn(chain);
         value -= this.getValueOut();
 
-        return value >= 0;
+        if (value < 0) {
+            throw new Error("Transaction has deficit");
+        }
+
+        return true;
     }
 }
 

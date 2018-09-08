@@ -90,7 +90,7 @@ class Account {
         for (let coin of coins) {
             let msg = crypto.createHash('sha256').update(coin.address + outMsg).digest('hex');
             let sig = await ECDSA.sig(this._priKeyPath, msg);
-            vin.push(new TxIn(new TScript(sig, await this.getAddress()),
+            vin.push(new TxIn(new TScript(sig, from),
                             coin.txHash,
                             coin.index));
         }
