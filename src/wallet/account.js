@@ -1,5 +1,6 @@
-const { Transaction, TxIn, TxOut, TxIndex } = require('../Transaction/transaction');
+const { Transaction, TxIn, TxOut, TxIndex, Coin } = require('../Transaction/transaction');
 const BlockChain = require('../core/blockchain');
+const TScript = require('../TScript/TScript');
 const Config = require('../core/coreConfig');
 const Block = require('../core/block');
 const ECDSA = require('../util/ECDSA');
@@ -28,6 +29,8 @@ class Account {
         this._pubKeyPath = path.resolve('./KeyStore/pubKey.data');
         this._currentAddress = null;
         this._pocket = [];
+        this._spent = [];
+        this._used = [];
     }
 
     /**
@@ -42,14 +45,8 @@ class Account {
     }
 
     async getAddress() {
-        if (!this._currentAddress) {
-            let pubKey = await this.getPubKey();
-            let pubKeyHash = crypto.createHash('sha256').update(pubKey).digest();
-            pubKeyHash = crypto.createHash('ripemd160').update(pubKeyHash).digest();
-            let checkSum = crypto.createHash('sha256').update(pubKey).digest();
-            checkSum = crypto.createHash('sha256').update(pubKey).digest();
-    
-            this._currentAddress =  Buffer.concat([pubKeyHash, checkSum]).toString('base64');
+        if (!this._currentAddress) {            
+            this._currentAddress = ECDSA.generateAddress(await this.getPubKey());
         }
 
         return this._currentAddress;
@@ -70,6 +67,7 @@ class Account {
      * @param {string} from Address from
      * @param {Array<string>} to Addresses to
      * @param {Array<number>} values Transactions value 
+     * @return {Transaction}
      */
     async createTransaction(from, to, values) {
         // Check for validation of this transaction
@@ -87,8 +85,22 @@ class Account {
         let vin = [];
         let total = values.reduce((a, b) => a + b);
         let coins = this._chooseTxOut(total);
-        // Sign for each TxOut
+        // Sign for each TxOut and pack them into vin
+        let outMsg = to.concat(values).join('');
+        for (let coin of coins) {
+            let msg = crypto.createHash('sha256').update(coin.address + outMsg).digest('hex');
+            let sig = await ECDSA.sig(this._priKeyPath, msg);
+            vin.push(new TxIn(new TScript(sig, await this.getAddress()),
+                            coin.txHash,
+                            coin.index));
+        }
+        // Construct vout
+        let vout = [];
+        for (let i in to) {
+            vout.push(new TxOut(to[i], values[i]));
+        }
 
+        return new Transaction(vin, vout);
     }
 
     /* ========== private methods ========== */
@@ -117,11 +129,7 @@ class Account {
                             // and haven't been spent
                             if (tx.vout[i].address === address &&
                                 idx.xSpent[i] === null) {
-                                pocket.push({
-                                    index : i,
-                                    out : tx.vout[i],
-                                    txHash : data.key
-                                });
+                                pocket.push(new Coin(i, tx.vout[i], data.key));
                             }
                         }
                     }
@@ -135,15 +143,17 @@ class Account {
     /**
      * Select out UTXOs for some payments
      * @param {number} total Total payment
-     * @returns {Array<Object<TxOut, string>>}
+     * @returns {Array<Coin>}
      */
     _chooseTxOut(total) {
         let ret = [];
 
-        for (let coin of this._pocket) {
+        for (let i in this._pocket) {
             if (total > 0) {
-                ret.push(coin);
-                total -= coin.out.value;
+                ret.push(this._pocket[i]);
+                this._spent.push(this._pocket[i]);
+                this._pocket.splice(i, 1);
+                total -= this._pocket[i].out.value;
             }
             else {
                 break;

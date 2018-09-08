@@ -44,8 +44,22 @@ async function verify(pubKeyPath, msg, sig) {
     return await eccrypto.verify(pubKey, hashMsg, sig);
 }
 
+/**
+ * Generate Base64 address according to public key
+ * @param {string | Buffer} pubKey 
+ */
+function generateAddress(pubKey) {
+    let pubKeyHash = crypto.createHash('sha256').update(pubKey).digest();
+    pubKeyHash = crypto.createHash('ripemd160').update(pubKeyHash).digest();
+    let checkSum = crypto.createHash('sha256').update(pubKey).digest();
+    checkSum = crypto.createHash('sha256').update(pubKey).digest();
+
+    return  Buffer.concat([pubKeyHash, checkSum]).toString('base64');
+}
+
 module.exports = {
     createPriKey,
     sig,
-    verify
+    verify,
+    generateAddress
 }

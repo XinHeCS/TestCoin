@@ -1,5 +1,6 @@
-const Block = require('../core/block');
 const BlockChain = require('../core/blockchain');
+const Account = require('../wallet/account');
+const Block = require('../core/block');
 const config = require('../core/coreConfig');
 const SHA256 = require('../util/SHA256');
 const Helper = require('../util/helper');
@@ -9,11 +10,13 @@ class Miner {
     /**
      * Contractor of miner instance
      * @param {BlockChain} blc An instance of current attached
+     * @param {Account} coinBase
      * block chain.
      */
-    constructor(blc) {
+    constructor(blc, coinBase) {
         this._minerHandle = null;
         this._blcHandle = blc;
+        this._coinBase = coinBase;
     }
 
     /* ========== private methods ========== */
@@ -106,7 +109,6 @@ class Miner {
 
         // Mining process
         console.log('Start mining at ' + startTime);
-        // console.log(newBlock.difficulty); 
         newBlock = this._solve(newBlock);
         console.log('Total mining ' + (new Date().getTime() - startTime) + 'ms');
         // End ming

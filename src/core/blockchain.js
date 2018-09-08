@@ -1,6 +1,7 @@
 const level = require('level');
 const Block = require('./block');
 const Config = require('./coreConfig');
+const {Transaction, TxIn, TxOut} = require('../Transaction/transaction');
 
 /**
  * A manager class to block chain
@@ -10,7 +11,7 @@ class BlockChain {
      * Initialize a certain block chain
      * @param {string} chainDB The path of current block chain data
      * @param {string} txDB The path of current transactions data
-     * @param {string} txIndexDb The path of current tx index data
+     * @param {string} txIndexDb The path of current tx index data     
      */
     constructor(chainDB, txDB, txIndexDb) {
         // A reference to block chain's data base
@@ -32,6 +33,10 @@ class BlockChain {
 
     getTxIndexHandle() {
         return this._txIndexdb;
+    }
+
+    getTxPoolHandle() {
+        return this._txPool;
     }
 
     async getLatestBlock() {   
@@ -74,6 +79,14 @@ class BlockChain {
             await this._checkChain();
         }       
         return await this._writeBlock(block);
+    }
+
+    /**
+     * Fetch transactions according to its hash value
+     * @param {string} hash 
+     */
+    async getTransaction(hash) {
+        return await this._readTransaction(hash);
     }
 
     // ================ Internal method(s) ==================
@@ -169,6 +182,17 @@ class BlockChain {
             this._db.put(block.getHash(), blockStr),
             this._db.put(Config.TOP_BLOCK, blockStr)
         ]);
+    }
+
+    _readTransaction(hash) {
+        let txHandle = this._txdb;
+        return new Promise(function (resolve, reject) {
+            txHandle.get(hash)
+            .then(
+                (tx) => resolve(Transaction.instance(tx)),
+                (err) => reject(err)
+            );
+        })
     }
 }
 
