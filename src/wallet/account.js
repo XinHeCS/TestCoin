@@ -1,5 +1,6 @@
 const { Transaction, TxIn, TxOut, TxIndex, Coin } = require('../Transaction/transaction');
 const BlockChain = require('../core/blockchain');
+const TxPool = require('../Transaction/TxPool');
 const TScript = require('../TScript/TScript');
 const Config = require('../core/coreConfig');
 const Block = require('../core/block');
@@ -81,10 +82,15 @@ class Account {
             await this.fetchBalance();
         }
 
+        // Check for balance
+        let coinCount = this._checkBalance(values.reduce((a, b) => a + b));
+        if (coinCount === -1) {
+            throw new Error('Short balance.');
+        }
+
         // Construct this transaction
         let vin = [];
-        let total = values.reduce((a, b) => a + b);
-        let coins = this._chooseTxOut(total);
+        let coins = this._chooseTxOut(coinCount);
         // Sign for each TxOut and pack them into vin
         let outMsg = to.concat(values).join('');
         for (let coin of coins) {
@@ -100,7 +106,7 @@ class Account {
             vout.push(new TxOut(to[i], values[i]));
         }
 
-        return new Transaction(vin, vout);
+        TxPool.getInstance().cacheTransaction(new Transaction(vin, vout));
     }
 
     /* ========== private methods ========== */
@@ -141,26 +147,37 @@ class Account {
     }
 
     /**
-     * Select out UTXOs for some payments
+     * Check if we have enough money to pay
      * @param {number} total Total payment
-     * @returns {Array<Coin>}
+     * @return {number} Return the number of coins we would
+     *                  use to cover the costs.
      */
-    _chooseTxOut(total) {
-        let ret = [];
-
-        for (let i in this._pocket) {
+    _checkBalance(total) {
+        let i = 0;
+        for (let coin of this._pocket) {
             if (total > 0) {
-                ret.push(this._pocket[i]);
-                this._spent.push(this._pocket[i]);
-                this._pocket.splice(i, 1);
-                total -= this._pocket[i].out.value;
+                total -= coin.out.value;
+                ++i;
             }
             else {
-                break;
+                return i;
             }
         }
 
-        return ret;
+        return total <= 0 ? i : -1;
+    }
+
+    /**
+     * Select out UTXOs for some payments
+     * @param {number} total Total number of coins
+     * @returns {Array<Coin>}
+     */
+    _chooseTxOut(total) {
+        let ret = this._pocket.slice(0, total);
+        this._spent.concat(ret);
+        this._pocket.splice(0, total);
+
+        return tot;
     }
 }
 

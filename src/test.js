@@ -121,20 +121,22 @@ const account = new Account();
 //     }
 // );
 
-async function test(condition) {
-    if (condition) {
-        throw new Error("Fuck");
-    }
-    else {
-        return 123;
-    }
-}
+// async function test(condition) {
+//     if (condition) {
+//         throw new Error("Fuck");
+//     }
+//     else {
+//         return 123;
+//     }
+// }
 
-test(true)
-.then(
-    () => console.log('true!'),
-    () => console.log('false!')
-);
+// test(true)
+// .then(
+//     () => console.log('true!'),
+//     () => console.log('false!')
+// );
+
+
 
 
 
