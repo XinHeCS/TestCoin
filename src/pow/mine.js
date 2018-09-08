@@ -34,7 +34,7 @@ class Miner {
         TxPool.getInstance().cacheTransaction(cbTx);
 
         let startTime = new Date().getTime();        
-
+        // Construct new block
         let latestBlock = await this._blcHandle.getLatestBlock();
         let newBlock = new Block(latestBlock.number + 1,
                                 latestBlock.preHash,

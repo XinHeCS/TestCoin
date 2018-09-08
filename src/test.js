@@ -74,11 +74,24 @@
 
 const ECDSA = require('./util/ECDSA');
 const Account = require('./wallet/account');
+const BlockChain = require('./core/blockchain');
+const Config = require('./core/coreConfig');
 const path = require('path');
 const fs = require('fs');
 const util = require('util');
 
-const account = new Account();
+const chain = new BlockChain(Config.CHAIN_DATABASE,
+                             Config.TX_DATABASE,
+                             Config.TX_INDEX_DATABASE);
+
+const account = new Account(chain);
+
+// account.createAccount('./KeyStore');
+account.showBalance()
+.then(
+    (data) => console.log(`You have ${data} tc`),
+    (err) => console.log(err)
+);
 
 // ECDSA.createPriKey(wallet.priKeyPath, wallet.pubKeyPath)
 // .then(

@@ -42,7 +42,7 @@ class Account {
         if (!fs.existsSync(accountPath)) {
             throw new Error(`Directory: ${accountPath} doesn't exists`);
         }
-        await ECDSA.createPriKey(this._priKeyPath);
+        await ECDSA.createPriKey(this._priKeyPath, this._pubKeyPath);
     }
 
     async getAddress() {
@@ -55,6 +55,19 @@ class Account {
 
     async getPubKey() {
         return await readFile(this._pubKeyPath);
+    }
+
+    async showBalance() {
+        if (this._pocket.length === 0) {
+            await this.fetchBalance();
+        }
+
+        let balance = 0;
+        for (let coin of this._pocket) {
+            balance += coin.out.value;
+        }
+
+        return balance;
     }
 
     async fetchBalance() {

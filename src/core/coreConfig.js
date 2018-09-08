@@ -8,9 +8,9 @@ const TOP_BLOCK = "_top_block";
 
 // Date base path config
 const DATABASE = './DataBase';
-const TX_DATABASE = path.resolve(DATABASE + 'tx.dat');
-const CHAIN_DATABASE = path.resolve(DATABASE + 'chain.dat');
-const TX_INDEX_DATABASE = path.resolve(DATABASE + 'tx_index.dat');
+const TX_DATABASE = path.resolve(DATABASE, 'tx.dat');
+const CHAIN_DATABASE = path.resolve(DATABASE, 'chain.dat');
+const TX_INDEX_DATABASE = path.resolve(DATABASE, 'tx_index.dat');
 
 module.exports = {
     BLOCK_INIT_DIFFICULTY,

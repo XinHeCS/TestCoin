@@ -3,6 +3,11 @@ const crypto = require('crypto');
 const eccrypto = require('eccrypto');
 const nodeUtil = require('util');
 
+// Wrapper some useful functions
+const readFile = nodeUtil.promisify(fs.readFile);
+const writeFile = nodeUtil.promisify(fs.writeFile);
+const stat = nodeUtil.promisify(fs.stat);
+
 /**
  * Create a private key from scratch
  * @param {string} priKeyPath 

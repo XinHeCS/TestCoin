@@ -77,7 +77,7 @@ class BlockChain {
     async addBlock(block) {
         if (this._check) {
             await this._checkChain();
-        }       
+        }
         return await this._writeBlock(block);
     }
 
