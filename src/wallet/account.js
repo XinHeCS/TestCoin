@@ -83,7 +83,8 @@ class Account {
         }
 
         // Check for balance
-        let coinCount = this._checkBalance(values.reduce((a, b) => a + b));
+        let total = values.reduce((a, b) => a + b);
+        let [coinCount, pay] = this._checkBalance(total);
         if (coinCount === -1) {
             throw new Error('Short balance.');
         }
@@ -104,6 +105,10 @@ class Account {
         let vout = [];
         for (let i in to) {
             vout.push(new TxOut(to[i], values[i]));
+        }
+        // Check changes
+        if (pay > total) {
+            vout.push(new TxOut(from, pay - total));
         }
 
         TxPool.getInstance().cacheTransaction(new Transaction(vin, vout));
@@ -149,22 +154,24 @@ class Account {
     /**
      * Check if we have enough money to pay
      * @param {number} total Total payment
-     * @return {number} Return the number of coins we would
+     * @return {Array<number>} Return the number of coins we would
      *                  use to cover the costs.
      */
     _checkBalance(total) {
         let i = 0;
+        let pay = 0;
         for (let coin of this._pocket) {
             if (total > 0) {
                 total -= coin.out.value;
+                pay += coin.out.value;
                 ++i;
             }
             else {
-                return i;
+                return i, pay;
             }
         }
 
-        return total <= 0 ? i : -1;
+        return total <= 0 ? [i, pay] : [-1, 0];
     }
 
     /**
