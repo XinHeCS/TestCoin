@@ -1,7 +1,8 @@
-const level = require('level');
-const Block = require('./block');
+const { Transaction, TxIn, TxOut, TxIndex } = require('../Transaction/transaction');
+const TxPool = require('../Transaction/TxPool');
 const Config = require('./coreConfig');
-const {Transaction, TxIn, TxOut} = require('../Transaction/transaction');
+const Block = require('./block');
+const level = require('level');
 
 /**
  * A manager class to block chain
@@ -50,7 +51,7 @@ class BlockChain {
      * Query a block according to it's block number
      * @param {Number} number Block index
      */
-    async getBlock(number) {        
+    async getBlock(number) {
         if (this._check) {
             await this._checkChain();
         }       
@@ -78,15 +79,70 @@ class BlockChain {
         if (this._check) {
             await this._checkChain();
         }
-        return await this._writeBlock(block);
+        await this._writeBlock(block);
+        await this._writeTransaction(block.data);
     }
 
     /**
      * Fetch transactions according to its hash value
      * @param {string} hash 
      */
-    async getTransaction(hash) {
+    async getTxByHash(hash) {
         return await this._readTransaction(hash);
+    }
+
+    /**
+     * Get the values of txIn and also 
+     * check signature at the same time
+     * @param {Transaction} tx
+     */
+    async getValueIn(tx) {
+        if (tx.isCoinBase()) {
+            return 0;
+        }
+        else {
+            let ret = 0;
+            for (let txIn of tx.vin) {
+                let preTx = await this.getTxByHash(txIn.preTx);
+                await txIn.script.checkAddress(preTx.vout[txIn.index].address);
+                await txIn.script.verify();
+                ret += preTx.vout[txIn.index].value;
+            }
+            return ret;
+        }
+    }
+
+    /**
+     * Get the values of out 
+     * @param {Transaction} tx
+     */
+    getValueOut(tx) {
+        let ret = 0;
+        for (let txOut of tx.vout) {
+            ret += txOut.value;
+        }
+        return ret;
+    }
+
+    /**
+     * CHeck whether a transaction is valid
+     * @param {Transaction} tx
+     */
+    async checkTransaction(tx) {
+        // Check coin base
+        if (tx.isCoinBase()) {
+            return true;
+        }
+        // Check budget balance and signature
+        let value = 0;
+        value += await this.getValueIn(tx);
+        value -= this.getValueOut(tx);
+
+        if (value < 0) {
+            throw new Error("Transaction has deficit");
+        }
+
+        return true;
     }
 
     // ================ Internal method(s) ==================
@@ -106,8 +162,8 @@ class BlockChain {
         try {
             await this._readBlockHash(Config.TOP_BLOCK);
         } catch (error) {
-            let genesis = new Block(0, '0', 
-                                    'Test Coin', Config.BLOCK_INIT_DIFFICULTY,
+            let genesis = new Block(0, '0',
+                                    ['Test Coin'], Config.BLOCK_INIT_DIFFICULTY,
                                     null);
             await this._writeBlock(genesis);
         }
@@ -155,33 +211,44 @@ class BlockChain {
         });
     }
 
-    // _readLatestBlock() {
-    //     let blockChainDB = this.db;
-    //     return new Promise(function (resolve, reject) {
-    //         blockChainDB.get(Config.TOP_BLOCK)
-    //         .then(
-    //             function (data) {
-    //                 let block = JSON.parse(data);
-    //                 resolve(block);
-    //             },
-    //             function (err) {
-    //                 reject(err);
-    //             }
-    //         );
-    //     })
-    // }
-
     /**
      * Write new block into levelDB
      * @param {Block} block New block to write into 
      *                      data base.
      */
     _writeBlock(block) {
-    let blockStr = JSON.stringify(block);
+        let blockStr = JSON.stringify(block);
         return Promise.all([
             this._db.put(block.getHash(), blockStr),
             this._db.put(Config.TOP_BLOCK, blockStr)
         ]);
+    }
+
+    /**
+     *  Write transaction into database
+     * @param {Array<string>} data Array of tx hash value
+     */
+    _writeTransaction(data) {
+        let txHandle = this._txdb;
+        let txIdxHandle = this._txIndexdb;
+        return new Promise(function (resolve, reject) {
+            for (let hash of data) {
+                let tx = TxPool.getInstance().findTransaction(hash);
+                let txIndex = new TxIndex(tx.vout);
+                Promise.all(
+                    [
+                        txHandle.put(hash,
+                                    JSON.stringify(tx)),
+                        txIdxHandle.put(hash,
+                                        JSON.stringify(txIndex))
+                    ]
+                )
+                .then(
+                    () =>  resolve(TxPool.getInstance().removeByHash(hash)),
+                    (err) => reject(err)
+                );
+            }
+        })
     }
 
     _readTransaction(hash) {
@@ -197,44 +264,3 @@ class BlockChain {
 }
 
 module.exports = BlockChain;
-
-// let blockChain = [
-//     new Block(0, 0, [1, 2, 3], 16, null)
-// ];
-
-// /**
-//  * Generate a new un-minded block added to the top of block chain
-//  * @param {any} data Current block data
-//  * @returns {Block} The new block
-//  */
-// function generateNewBlock(data) {
-//     const topBlock = getLatestBlock();
-//     const preHash = generateBlockHash(topBlock);
-
-//     return new Block(topBlock.number + 1, preHash, data, 
-//         topBlock.difficulty);
-// }
-
-// /**
-//  * To verify if the block is legal
-//  * @param {Block} block The block to be verified
-//  * @returns {boolean} whether this block is valid
-//  */
-// function isValidBlock(block) {
-//     const preBLock = getBlock(block.number - 1);
-
-//     if (preBLock !== undefined) {
-//         if (preBLock.hash !== block.preHash) {
-//             console.error('Unmatched previous hash!');
-//             return false;
-//         }
-//         else if (block.hash !== generateBlockHash(block)) {
-//             console.error('Unmatched block hash!');
-//             return false;
-//         }
-//         // TODO : Should also check if the data is valid here
-//         return true;
-//     }
-
-//     return false;
-// }

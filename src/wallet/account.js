@@ -148,11 +148,12 @@ class Account {
                 TxIdxHandle.get(data.key)
                 .then(
                     (idx) => {
+                        let txIdx = JSON.parse(idx);
                         for (let i in tx.vout) {
                             // if this TxOut belongs to this address
                             // and haven't been spent
                             if (tx.vout[i].address === address &&
-                                idx.xSpent[i] === null) {
+                                txIdx.vSpent[i] === null) {
                                 pocket.push(new Coin(i, tx.vout[i], data.key));
                             }
                         }

@@ -30,10 +30,9 @@ class Miner {
         // Generate coin base transaction
         let cbTx = new Transaction(null, 
                                     [], 
-                                    [new TxOut(await this._coinBase.getAddress(), 5)]);
-        TxPool.getInstance().cacheTransaction(cbTx);
+                                    [new TxOut(await this._coinBase.getAddress(), 5)]);        
 
-        let startTime = new Date().getTime();        
+        let startTime = new Date().getTime();
         // Construct new block
         let latestBlock = await this._blcHandle.getLatestBlock();
         let newBlock = new Block(latestBlock.number + 1,
@@ -50,6 +49,9 @@ class Miner {
         console.log('Total mining ' + (new Date().getTime() - startTime) + 'ms');
         // End ming
 
+        // We have mined something and the coi base transaction
+        // becomes valid now and we can add it into memory pool
+        TxPool.getInstance().cacheTransaction(cbTx);
         await this._blcHandle.addBlock(newBlock);
 
         // this.minerHandle = setTimeout(this.start.bind(this), 0);

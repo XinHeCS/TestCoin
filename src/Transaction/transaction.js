@@ -1,4 +1,3 @@
-const BlockChain = require('../core/blockchain');
 const TScript = require('../TScript/TScript');
 const SHA256 = require('../util/SHA256');
 const Block = require('../core/block');
@@ -15,27 +14,6 @@ class TxIn {
         this.preTx = hash;
         this.index = index;
     }
-
-    // isNull() {
-    //     return this.preTx === null;
-    // }
-
-    // /**
-    //  * Judge whether this TxIn is valid in current chain
-    //  * @param {BlockChain} chain
-    //  */
-    // async isMine(chain) {
-    //     let preTx = await chain.getTransaction(this.preTx);
-    //     await this.script.checkAddress(preTx.vout[this.index].address);
-    //     await this.script.verify();
-    // }
-
-    // async getBalance() {
-    //     if (this.isMine()) {
-            
-    //     }
-    //     return 0;
-    // }
 }
 
 TxIn.instance = function (txIn) {
@@ -83,59 +61,6 @@ class Transaction {
      */
     equals(tx) {
         return this.getHash() === tx.getHash();
-    }
-
-    /**
-     * Get the values of txIn and also 
-     * check signature at the same time
-     * @param {BlockChain} chain
-     */
-    async getValueIn(chain) {
-        if (this.isCoinBase()) {
-            return 0;
-        }
-        else {
-            let ret = 0;
-            for (let txIn of this.vin) {
-                let preTx = await chain.getTransaction(txIn.preTx);
-                await txIn.script.checkAddress(preTx.vout[txIn.index].address);
-                await txIn.script.verify();
-                ret += preTx.vout[txIn.index].value;
-            }
-            return ret;
-        }
-    }
-
-    /**
-     * Get the values of out     
-     */
-    getValueOut() {
-        let ret = 0;
-        for (let txOut of this.vout) {
-            ret += txOut.value;
-        }
-        return ret;
-    }
-
-    /**
-     * CHeck whether a transaction is valid
-     * @param {BlockChain} chain
-     */
-    async checkTransaction(chain) {
-        // Check coin base
-        if (this.isCoinBase()) {
-            return true;
-        }
-        // Check budget balance and signature
-        let value = 0;
-        value += await this.getValueIn(chain);
-        value -= this.getValueOut();
-
-        if (value < 0) {
-            throw new Error("Transaction has deficit");
-        }
-
-        return true;
     }
 }
 

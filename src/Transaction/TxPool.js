@@ -26,6 +26,9 @@ let TxPool = (function (args) {
         instance = null;
     }
 
+    /**
+     * @returns {Transaction}
+     */
     TxPool.prototype.findTransaction = function (hash) {
         return this._pool.get(hash);
     }
@@ -34,20 +37,20 @@ let TxPool = (function (args) {
      * @returns {Transaction}
      */
     TxPool.prototype.pickTransaction = function () {
-        for (let [_, value] of this) {
+        for (let [_, value] of this._pool) {
             return value;
         }
         return undefined;
     }
 
     TxPool.prototype.pickHash = function () {
-        for (let [key, _] of this) {
+        for (let [key, _] of this._pool) {
             return key;
         }
         return undefined;
     }
 
-    TxPool.prototype.removeTransaction = function (hash) {
+    TxPool.prototype.removeByHash = function (hash) {
         this._pool.delete(hash);
     }
 
@@ -63,7 +66,7 @@ let TxPool = (function (args) {
      * Delete a transaction
      * @param {Transaction} tx Transaction to deleted
      */
-    TxPool.prototype.deleteTransaction = function (tx) {
+    TxPool.prototype.removeByTransaction = function (tx) {
         this._pool.delete(tx.getHash());
     }
 
@@ -73,8 +76,6 @@ let TxPool = (function (args) {
     TxPool.prototype.cacheTransaction = function (tx) {
         this._pool.set(tx.getHash(), tx);
     }
-
-
 
     return {
         getInstance : getInstance,

@@ -1,4 +1,5 @@
 const BlockChain = require('./src/core/blockchain');
+const Account = require('./src/wallet/account');
 const Config = require('./src/core/coreConfig');
 const Block = require('./src/core/block');
 const Miner = require('./src/pow/mine');
@@ -45,11 +46,16 @@ let tesInstance = testCoin.start({
     eval : testEval
 });
 
-let dataBase = './DataBase/chain.dat';
-let blc = new BlockChain(dataBase);
+const chain = new BlockChain(Config.CHAIN_DATABASE,
+                            Config.TX_DATABASE,
+                            Config.TX_INDEX_DATABASE);
+
+const account = new Account(chain);
+
+const miner = new Miner(chain, account);
 
 tesInstance.context.Config = Config;
 tesInstance.context.Block = Block;
-
-tesInstance.context.chain = blc;
-tesInstance.context.miner = new Miner(blc);
+tesInstance.context.account = account;
+tesInstance.context.chain = chain;
+tesInstance.context.miner = miner;
