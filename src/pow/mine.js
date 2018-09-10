@@ -1,6 +1,9 @@
-const Block = require('../core/block');
+const { Transaction, TxIn, TxOut } = require('../Transaction/transaction');
 const BlockChain = require('../core/blockchain');
+const TxPool = require('../Transaction/TxPool');
 const config = require('../core/coreConfig');
+const Account = require('../wallet/account');
+const Block = require('../core/block');
 const SHA256 = require('../util/SHA256');
 const Helper = require('../util/helper');
 
@@ -8,12 +11,60 @@ class Miner {
 
     /**
      * Contractor of miner instance
-     * @param {BlockChain} db An instance of current attached
+     * @param {BlockChain} blc An instance of current attached
+     * @param {Account} coinBase
      * block chain.
      */
-    constructor(db) {
-        this.minerHandle = null;
-        this.blcHandle = db;
+    constructor(blc, coinBase) {
+        this._minerHandle = null;
+        this._blcHandle = blc;
+        this._coinBase = coinBase;
+    }
+
+    /* ========== public methods ========== */
+
+    /**
+     * Start mining
+     */
+    async start() {
+        // Generate coin base transaction
+        let cbTx = new Transaction(null, 
+                                    [], 
+                                    [new TxOut(await this._coinBase.getAddress(), 5)]);        
+
+        let startTime = new Date().getTime();
+        // Construct new block
+        let latestBlock = await this._blcHandle.getLatestBlock();
+        let newBlock = new Block(latestBlock.number + 1,
+                                latestBlock.preHash,
+                                this._packTransactions().concat([cbTx.getHash()]),
+                                latestBlock.difficulty,
+                                null);
+        newBlock.difficulty = await this._getDifficulty(latestBlock);
+        newBlock.preHash = latestBlock.getHash();
+
+        // Mining process
+        console.log('Start mining at ' + startTime);
+        newBlock = this._solve(newBlock);
+        console.log('Total mining ' + (new Date().getTime() - startTime) + 'ms');
+        // End ming
+
+        // We have mined something and the coi base transaction
+        // becomes valid now and we can add it into memory pool
+        TxPool.getInstance().cacheTransaction(cbTx);
+        await this._blcHandle.addBlock(newBlock);
+
+        // this.minerHandle = setTimeout(this.start.bind(this), 0);
+    }
+
+    /**
+     * Stop the mining process
+     */
+    stop() {
+        if (this._minerHandle) {
+            clearTimeout(this._minerHandle);
+            this._minerHandle = null;
+        }
     }
 
     /* ========== private methods ========== */
@@ -68,7 +119,7 @@ class Miner {
      * @param {Block} latestBlock The latest block
      */
     async _adjustDifficulty(latestBlock) {
-        let preBlock = await this.blcHandle
+        let preBlock = await this._blcHandle
                                 .getBlock(latestBlock.number - config.BLOCK_CHECK_INTERVAL);
         let idealTimeSpan = config.BLOCK_CHECK_INTERVAL * 
             config.BLOCK_GEN_SPEED;
@@ -87,43 +138,21 @@ class Miner {
         return latestBlock.difficulty + Math.log2(idealTimeSpan / actualTimeSpan);
     }
 
-    /* ========== public methods ========== */
-
     /**
-     * Start mining
+     * @returns {Array<string>}
      */
-    async start() {
-        let startTime = new Date().getTime();        
+    _packTransactions() {
+        let ret = [];
 
-        let latestBlock = await this.blcHandle.getLatestBlock();
-        let newBlock = new Block(latestBlock.number + 1,
-                                latestBlock.preHash,
-                                "Okay!",
-                                latestBlock.difficulty,
-                                null);
-        newBlock.difficulty = await this._getDifficulty(latestBlock);
-        newBlock.preHash = latestBlock.getHash();
-
-        // Mining process
-        console.log('Start mining at ' + startTime);
-        // console.log(newBlock.difficulty); 
-        newBlock = this._solve(newBlock);
-        console.log('Total mining ' + (new Date().getTime() - startTime) + 'ms');
-        // End ming
-
-        await this.blcHandle.addBlock(newBlock);
-
-        // this.minerHandle = setTimeout(this.start.bind(this), 0);
-    }
-
-    /**
-     * Stop the mining process
-     */
-    stop() {
-        if (this.minerHandle) {
-            clearTimeout(this.minerHandle);
-            this.minerHandle = null;
+        for (let i = 0; i < 5; ++i) {
+            let hash = TxPool.getInstance().pickHash();
+            if (!hash) {
+                break;
+            }
+            ret.push(hash);
         }
+
+        return ret;
     }
 }
 

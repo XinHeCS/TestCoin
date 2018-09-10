@@ -1,6 +1,14 @@
 const SHA256 = require('../util/SHA256');
 
 class Block {
+    /**
+     * 
+     * @param {number} number Block's height
+     * @param {string} preHash Parent block's hash value
+     * @param {Array<string>} data Array of transaction's hash
+     * @param {number} difficulty Mining difficulty
+     * @param {number} nonce Proof of work
+     */
     constructor (number, preHash, data, difficulty, nonce) {
         this.number = number;
         this.preHash = preHash;
@@ -17,7 +25,7 @@ class Block {
      */
     getHash() {    
         let val = this.number + this.preHash + this.timeStamp + 
-        this.data + this.difficulty + this.nonce;
+        this.data.join('') + this.difficulty + this.nonce;
 
         return SHA256(val);
     }

@@ -4,12 +4,14 @@
   "description": "A naive blockchain",
   "main": "test.js",
   "dependencies": {
+    "eccrypto": "^1.0.3",
     "level": "^4.0.0",
     "leveldown": "^4.0.1"
   },
   "devDependencies": {},
   "scripts": {
-    "test": "node ./src/test.js"
+    "test": "node ./src/test.js",
+    "start": "node ./index.js"
   },
   "author": "XinHe",
   "license": "MIT"

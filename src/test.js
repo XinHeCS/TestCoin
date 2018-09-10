@@ -1,115 +1,122 @@
+// const {Transaction, TxIn, TxOut, TxIndex} = require('./Transaction/transaction');
+const ECDSA = require('./util/ECDSA');
+const Account = require('./wallet/account');
 const BlockChain = require('./core/blockchain');
 const Config = require('./core/coreConfig');
-const Block = require('./core/block');
 const Miner = require('./pow/mine');
-const testCoin = require('repl');
-const vm = require('vm');
+const path = require('path');
+const fs = require('fs');
+const util = require('util');
 
-function testEval(cmd, content, filename, callback) {
-    let result;
-    try {
-        result = vm.runInContext(cmd, content);
-    } catch (error) {
-        if (isRecoverableError(error)) {
-            return callback(new repl.Recoverable(error));
-        }
-        else {
-            callback(error);
-        }
-    }
+const chain = new BlockChain(Config.CHAIN_DATABASE,
+                             Config.TX_DATABASE,
+                             Config.TX_INDEX_DATABASE);
 
-    if (result instanceof Promise) {
-        result.then(
-            function fulfill(data) {
-                callback(null, data);
-            },
-            function reject(err) {
-                callback(err);
-            }
-        );
-    }
-    else {
-        callback(null, result);
-    }
-}
-  
-function isRecoverableError(error) {
-    if (error.name === 'SyntaxError') {
-        return /^(Unexpected end of input|Unexpected token)/.test(error.message);
-    }
-    return false;
-}
+const account = new Account(chain);
 
-let tesInstance = testCoin.start({
-    prompt : '-> ',
-    eval : testEval
-});
+account.getAddress()
+.then((addr) => console.log(addr));
 
-let dataBase = './DataBase/chain.dat';
-let blc = new BlockChain(dataBase);
+// chain.getTxByHash('bab99a1d8e05ef89819e3a271bd4cf2ff3ee1437c61d3e3df0eab0adf09fb052')
+// .then(
+//     (data) => console.log(data)
+// );
 
-tesInstance.context.Config = Config;
-tesInstance.context.Block = Block;
+// account.createTransaction(null, [null], [5])
+// .then(
+//     (data) => console.log(data)
+// );
 
-tesInstance.context.chain = blc;
-tesInstance.context.miner = new Miner(blc);
+// account.createAccount('./KeyStore');
+account.showBalance()
+.then(
+    (data) => console.log(`You have ${data} tc`),
+    (err) => console.log(err)
+);
 
 
+// const miner = new Miner(chain, account);
 
-// for (let i = 0; i < 10; ++i) {
-//     let block = {
-//         number : i,
-//         data : i + ' string.'
-//     };
-//     blc.addBlock(block);
-// }
+// miner.start();
 
-// let ret = blc.getBlock(Config.TOP_BLOCK);
-// let ret = blc.getLatestBlock();
-// let miner = new Miner(blc);
+// let {a, b, c} = {a : 1, b : 2, c : 3};
 
-// ret.then(
-//     function resolve(block) {
-//         console.log('Fetch block : ' + block.number);
-//         console.log('Data : ' + block.data);
-//         // miner.start();
+// let test = () => console.log(a, b, c);
+// test.func = () => console.log(a + b + c);
+
+// test.func();
+
+// ECDSA.createPriKey(wallet.priKeyPath, wallet.pubKeyPath)
+// .then(
+//     () => {
+//         console.log("Success!");
 //     },
-//     function reject(err) {
+//     (err) => {
 //         console.log(err);
 //     }
 // );
 
-// let data = JSON.stringify({
-//     name : 'Fuck',
-//     number : '1'
-// });
-
-// db.batch()
-// .put('1234', data)
-// .write(function () {
-//     console.log("Done!");
-// });
-
-// for (let i = 0; i < 10; ++i) {
-//     db.put(i, i + ' String').then((err, ret) => { console.log(err, ret) });
-// }
-
-// db.createValueStream()
-// .on('data', function (val) {
-//     if (val.startsWith('5')) {
-//         // value = block;
-//         console.log(val);
+// ECDSA.sig(wallet.priKeyPath, "Fuck you, man!!")
+// .then(
+//     function (data) {
+//         console.log(`Sig: ${data}`);
+//         return data;
 //     }
-// });
-
-// let result = db.get("1234");
-
-// result.then(
-//     function fulfill(data) {
-//         console.log(JSON.parse(data));
+// )
+// .then(
+//     function (data) {
+//         return ECDSA.verify(wallet.pubKeyPath, "Fuck you, man!", data);
+//     }
+// )
+// .then(
+//     function () {
+//         console.log(`Pass!`);
 //     },
-//     function reject(err) {
+//     function (err) {
 //         console.log(err);
 //     }
 // );
 
+// account.getAddress()
+// .then(
+//     (ret) => {
+//         console.log(`Address: ${ret}`);
+//     },
+//     (err) => {
+//         console.log(err);
+//     }
+// );
+// let arr = []
+
+// function use() {
+//     return new Promise(function (resolve, reject) {
+//         setTimeout(() => {
+//             arr.push(1, 2, 3);
+//             resolve(13);
+//         }, 2000);
+//     });
+// }
+
+// async function func() {
+//     await use();
+// }
+
+// async function test(condition) {
+//     // if (condition) {
+//     //     throw new Error("Fuck");
+//     // }
+//     // else {
+//     //     return 123;
+//     // }
+//     console.log(arr);
+
+//     await func();
+
+//     console.log(arr);
+// }
+
+// test(true)
+// .then(
+//     (data) => console.log(data),
+//     (err) => console.log(err)
+// );
