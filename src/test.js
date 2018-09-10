@@ -14,6 +14,18 @@ const chain = new BlockChain(Config.CHAIN_DATABASE,
 
 const account = new Account(chain);
 
+account.getAddress()
+.then((addr) => console.log(addr));
+
+// chain.getTxByHash('bab99a1d8e05ef89819e3a271bd4cf2ff3ee1437c61d3e3df0eab0adf09fb052')
+// .then(
+//     (data) => console.log(data)
+// );
+
+// account.createTransaction(null, [null], [5])
+// .then(
+//     (data) => console.log(data)
+// );
 
 // account.createAccount('./KeyStore');
 account.showBalance()
@@ -22,9 +34,10 @@ account.showBalance()
     (err) => console.log(err)
 );
 
-const miner = new Miner(chain, account);
 
-miner.start();
+// const miner = new Miner(chain, account);
+
+// miner.start();
 
 // let {a, b, c} = {a : 1, b : 2, c : 3};
 
@@ -73,24 +86,37 @@ miner.start();
 //         console.log(err);
 //     }
 // );
+// let arr = []
+
+// function use() {
+//     return new Promise(function (resolve, reject) {
+//         setTimeout(() => {
+//             arr.push(1, 2, 3);
+//             resolve(13);
+//         }, 2000);
+//     });
+// }
+
+// async function func() {
+//     await use();
+// }
 
 // async function test(condition) {
-//     if (condition) {
-//         throw new Error("Fuck");
-//     }
-//     else {
-//         return 123;
-//     }
+//     // if (condition) {
+//     //     throw new Error("Fuck");
+//     // }
+//     // else {
+//     //     return 123;
+//     // }
+//     console.log(arr);
+
+//     await func();
+
+//     console.log(arr);
 // }
 
 // test(true)
 // .then(
-//     () => console.log('true!'),
-//     () => console.log('false!')
+//     (data) => console.log(data),
+//     (err) => console.log(err)
 // );
-
-
-
-
-
-

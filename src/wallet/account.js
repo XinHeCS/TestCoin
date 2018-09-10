@@ -31,7 +31,6 @@ class Account {
         this._currentAddress = null;
         this._pocket = [];
         this._spent = [];
-        this._used = [];
     }
 
     /**
@@ -58,13 +57,14 @@ class Account {
     }
 
     async showBalance() {
-        if (this._pocket.length === 0) {
-            await this.fetchBalance();
-        }
+        await this.fetchBalance();
 
         let balance = 0;
         for (let coin of this._pocket) {
             balance += coin.out.value;
+        }
+        for (let coin of this._spent) {
+            balance -= coin.out.value;
         }
 
         return balance;
@@ -85,7 +85,7 @@ class Account {
      */
     async createTransaction(from, to, values) {
         // Check for validation of this transaction
-        if (to.length !== value.length) {
+        if (to.length !== values.length) {
             throw new Error(`Length of target addresses doesn't match with values'`);
         }
         if (!from) {
@@ -124,16 +124,20 @@ class Account {
             vout.push(new TxOut(from, pay - total));
         }
 
-        TxPool.getInstance().cacheTransaction(new Transaction(vin, vout));
+        let newTx = new Transaction(vin, vout);
+        TxPool.getInstance().cacheTransaction(newTx);
+
+        return newTx;
     }
 
     /* ========== private methods ========== */
-
+    
     /**
      * Fetch balance from address
      * @param {string} address 
      */
     _calculateBalance(address) {
+        this._pocket = [];
         let pocket = this._pocket;
         let TxHandle = this._blcHandle.getTxHandle();
         let TxIdxHandle = this._blcHandle.getTxIndexHandle();
@@ -145,6 +149,7 @@ class Account {
             .on('data', (data) => {
                 let tx = JSON.parse(data.value);
                 // Fetch the TxIndex respect to current transaction
+                stream.pause();
                 TxIdxHandle.get(data.key)
                 .then(
                     (idx) => {
@@ -157,8 +162,9 @@ class Account {
                                 pocket.push(new Coin(i, tx.vout[i], data.key));
                             }
                         }
+                        stream.resume();
                     }
-                );
+                )
             })
             .on('end', () => resolve())
             .on('error', (err) => reject(err));

@@ -25,9 +25,9 @@ A toy blockchain in JavaScript. In this project, I will roughly impalement some 
 
 - [x] Crypto module
 - [ ] Wallet module
-- [ ] Basic transaction module
-- [ ] Verity module
-- [ ] Trade module
+- [x] Basic transaction module
+- [x] Verity module
+- [x] Trade module
 
 # p2p
 

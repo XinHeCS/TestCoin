@@ -231,16 +231,20 @@ class BlockChain {
     _writeTransaction(data) {
         let txHandle = this._txdb;
         let txIdxHandle = this._txIndexdb;
+        let spendTxOut = this._spendTxOut;
         return new Promise(function (resolve, reject) {
             for (let hash of data) {
                 let tx = TxPool.getInstance().findTransaction(hash);
                 let txIndex = new TxIndex(tx.vout);
                 Promise.all(
                     [
+                        spendTxOut(tx),
                         txHandle.put(hash,
-                                    JSON.stringify(tx)),
+                                    JSON.stringify(tx))
+                                    .then((data) => console.log(data)),
                         txIdxHandle.put(hash,
                                         JSON.stringify(txIndex))
+                                    .then((data) => console.log(data))
                     ]
                 )
                 .then(
@@ -251,12 +255,36 @@ class BlockChain {
         })
     }
 
+    /**
+     * Mark all TxOuts referred by current tx's TxIn
+     * @param {Transaction} tx Transaction 
+     */
+    async _spendTxOut(tx) {
+        for (let txIn of tx.vin) {
+            let originTx = await this._readTransaction(txIn.preTx);
+            let originIdx = await this._readTxIndex(originTx.getHash());
+            originIdx.vSpent[txIn.index] = tx.getHash();
+            await this._txIndexdb.put(originTx.getHash(), JSON.stringify(originIdx));
+        }
+    }
+
+    _readTxIndex(hash) {
+        let txIdx = this._txIndexdb;
+        return new Promise(function (resolve, reject) {
+            txIdx.get(hash)
+            .then(
+                (IdxObj) => resolve(JSON.parse(IdxObj)),
+                (err) => reject(err)
+            );
+        })
+    }
+
     _readTransaction(hash) {
         let txHandle = this._txdb;
         return new Promise(function (resolve, reject) {
             txHandle.get(hash)
             .then(
-                (tx) => resolve(Transaction.instance(tx)),
+                (txObj) => resolve(Transaction.instance(JSON.parse(txObj))),
                 (err) => reject(err)
             );
         })
