@@ -22,13 +22,13 @@ account.getAddress()
 //     (data) => console.log(data)
 // );
 
-// account.createTransaction(null, [null], [5])
-// .then(
-//     (data) => console.log(data)
-// );
+account.createTransaction(null, [null], [5])
+.then(
+    (data) => console.log(data)
+);
 
 // account.createAccount('./KeyStore');
-account.showBalance()
+account.refreshBalance()
 .then(
     (data) => console.log(`You have ${data} tc`),
     (err) => console.log(err)

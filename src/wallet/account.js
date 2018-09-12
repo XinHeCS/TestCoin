@@ -2,10 +2,11 @@ const { Transaction, TxIn, TxOut, TxIndex, Coin } = require('../Transaction/tran
 const BlockChain = require('../core/blockchain');
 const TxPool = require('../Transaction/TxPool');
 const TScript = require('../TScript/TScript');
-const Config = require('../core/coreConfig');
-const Block = require('../core/block');
+// const Config = require('../core/coreConfig');
+// const Block = require('../core/block');
 const ECDSA = require('../util/ECDSA');
 const crypto = require('crypto');
+const { Writable, Readable } = require('stream');
 const nodeUtil = require('util');
 const path = require('path');
 const fs = require('fs');
@@ -56,9 +57,7 @@ class Account {
         return await readFile(this._pubKeyPath);
     }
 
-    async showBalance() {
-        await this.fetchBalance();
-
+    getBalance() {
         let balance = 0;
         for (let coin of this._pocket) {
             balance += coin.out.value;
@@ -68,6 +67,12 @@ class Account {
         }
 
         return balance;
+    }
+
+    async refreshBalance() {
+        await this.fetchBalance();
+        return this.getBalance();
+        this._spent = [];
     }
 
     async fetchBalance() {
@@ -131,43 +136,64 @@ class Account {
     }
 
     /* ========== private methods ========== */
-    
+
     /**
      * Fetch balance from address
      * @param {string} address 
      */
-    _calculateBalance(address) {
+    async _calculateBalance(address) {
+        await this._getTxOut(address);
+        await this._filterValidOut(address);
+    }
+    
+    _getTxOut(address) {
         this._pocket = [];
-        let pocket = this._pocket;
-        let TxHandle = this._blcHandle.getTxHandle();
-        let TxIdxHandle = this._blcHandle.getTxIndexHandle();
+        let Out = this._pocket;
+        let TxHandle = this._blcHandle.getTxHandle();        
 
         return new Promise(function (resolve, reject) {
-            let stream = TxHandle.createReadStream();
-            // Scan all the transactions
-            stream
+            TxHandle.createReadStream()
             .on('data', (data) => {
-                let tx = JSON.parse(data.value);
-                // Fetch the TxIndex respect to current transaction
-                stream.pause();
-                TxIdxHandle.get(data.key)
-                .then(
-                    (idx) => {
-                        let txIdx = JSON.parse(idx);
-                        for (let i in tx.vout) {
-                            // if this TxOut belongs to this address
-                            // and haven't been spent
-                            if (tx.vout[i].address === address &&
-                                txIdx.vSpent[i] === null) {
-                                pocket.push(new Coin(i, tx.vout[i], data.key));
-                            }
-                        }
-                        stream.resume();
+                let tx = Transaction.instance(JSON.parse(data.value));
+                for (let i in tx.vout) {
+                    if (tx.vout[i].address === address) {
+                        Out.push(new Coin(i, tx.vout[i], data.key));
                     }
-                )
+                }
             })
             .on('end', () => resolve())
             .on('error', (err) => reject(err));
+        })
+    }
+
+    async _filterValidOut(address) {
+         for (let i in this._pocket) {
+            if (await this._isSpent(this._pocket[i])) {
+                this._pocket.splice(i, 1);
+            }
+         }
+    }
+
+    /**
+     * Check whether this coin is spent
+     * @param {Coin} coin 
+     */
+    _isSpent(coin) {
+        let IdxHandle = this._blcHandle.getTxIndexHandle();
+
+        return new Promise(function (resolve, reject) {
+            IdxHandle.get(coin.txHash)
+            .then(
+                (data) => {
+                    let idx = JSON.parse(data);
+                    if (idx.vSpent[coin.index] !== null) {
+                        resolve(true);
+                    }
+                    else {
+                        resolve(false);
+                    }
+                }
+            );
         })
     }
 
@@ -207,5 +233,28 @@ class Account {
         return tot;
     }
 }
+
+// class _WritePocket extends Writable {
+//     constructor(options) {
+//         super(options);
+//         this._pocket = options.pocket || [];
+//     }
+
+//     /**
+//      * Internal function of write stream
+//      * @param {Coin} chunk 
+//      * @param {string} encoding 
+//      * @param {Function} callback 
+//      */
+//     _write(chunk, encoding, callback) {
+//         if (chunk instanceof Coin) {            
+//             this._pocket.push(chunk);
+//             callback();
+//         }
+//         else {
+//             callback(new Error("Failed to read data base"));
+//         }
+//     }
+// }
 
 module.exports = Account;

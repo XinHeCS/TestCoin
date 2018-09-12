@@ -91,6 +91,10 @@ class BlockChain {
         return await this._readTransaction(hash);
     }
 
+    async getTxIdxByHash(hash) {
+        return await this._readTransactionIdx(hash);
+    }
+
     /**
      * Get the values of txIn and also 
      * check signature at the same time
@@ -285,6 +289,17 @@ class BlockChain {
             txHandle.get(hash)
             .then(
                 (txObj) => resolve(Transaction.instance(JSON.parse(txObj))),
+                (err) => reject(err)
+            );
+        })
+    }
+
+    _readTransactionIdx(hash) {
+        let txIdxHandle = this._txIndexdb;
+        return new Promise(function (resolve, reject) {
+            txIdxHandle.get(hash)
+            .then(
+                (IdxObj) => resolve(JSON.parse(IdxObj)),
                 (err) => reject(err)
             );
         })
