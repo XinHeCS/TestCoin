@@ -1,6 +1,12 @@
 const ECDSA = require('../util/ECDSA');
 
 class TScript {
+    /**
+     * Constructor
+     * @param {string} sig 
+     * @param {Buffer} pubKey 
+     * @param {string} hash 
+     */
     constructor(sig, pubKey, hash) {
         this.sig = sig;
         this.pubKey = pubKey;
@@ -22,7 +28,8 @@ class TScript {
 }
 
 TScript.instance = function (script) {
-    return new TScript(script.sig, script.pubKey, script.hash);
+    let ret = new TScript(script.sig, script.pubKey, script.msg);
+    return ret;
 }
 
 module.exports = TScript;

@@ -36,18 +36,24 @@ let TxPool = (function (args) {
     /**
      * @returns {Transaction}
      */
-    TxPool.prototype.pickTransaction = function () {
+    TxPool.prototype.pickTransaction = function (number) {
+        let tx = [];
         for (let [_, value] of this._pool) {
-            return value;
+            if (number-- > 0) {
+                tx.push(value);
+            }
         }
-        return undefined;
+        return tx;
     }
 
-    TxPool.prototype.pickHash = function () {
+    TxPool.prototype.pickHash = function (number) {
+        let keys = [];
         for (let [key, _] of this._pool) {
-            return key;
+            if (number-- > 0) {
+                keys.push(key);
+            }
         }
-        return undefined;
+        return keys;
     }
 
     TxPool.prototype.removeByHash = function (hash) {

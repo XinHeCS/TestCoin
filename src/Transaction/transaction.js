@@ -17,9 +17,10 @@ class TxIn {
 }
 
 TxIn.instance = function (txIn) {
-    return new TxIn(TScript.instance(txIn.script),
+    let ret =  new TxIn(TScript.instance(txIn.script),
                     txIn.preTx,
                     txIn.index);
+    return ret;
 }
 
 class TxOut {

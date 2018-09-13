@@ -72,7 +72,6 @@ class Account {
     async refreshBalance() {
         await this.fetchBalance();
         return this.getBalance();
-        this._spent = [];
     }
 
     async fetchBalance() {
@@ -115,7 +114,7 @@ class Account {
         for (let coin of coins) {
             let msg = crypto.createHash('sha256').update(coin.address + outMsg).digest('hex');
             let sig = await ECDSA.sig(this._priKeyPath, msg);
-            vin.push(new TxIn(new TScript(sig, from),
+            vin.push(new TxIn(new TScript(sig, await this.getPubKey(), msg),
                             coin.txHash,
                             coin.index));
         }
@@ -124,12 +123,13 @@ class Account {
         for (let i in to) {
             vout.push(new TxOut(to[i], values[i]));
         }
+
         // Check changes
         if (pay > total) {
             vout.push(new TxOut(from, pay - total));
         }
 
-        let newTx = new Transaction(vin, vout);
+        let newTx = new Transaction(null, vin, vout);
         TxPool.getInstance().cacheTransaction(newTx);
 
         return newTx;
@@ -143,7 +143,7 @@ class Account {
      */
     async _calculateBalance(address) {
         await this._getTxOut(address);
-        await this._filterValidOut(address);
+        await this._filterValidOut();
     }
     
     _getTxOut(address) {
@@ -166,12 +166,14 @@ class Account {
         })
     }
 
-    async _filterValidOut(address) {
-         for (let i in this._pocket) {
-            if (await this._isSpent(this._pocket[i])) {
-                this._pocket.splice(i, 1);
+    async _filterValidOut() {
+        let filter = [];
+         for (let coin of this._pocket) {
+            if (!await this._isSpent(coin)) {
+                filter.push(coin);
             }
          }
+         this._pocket = filter;
     }
 
     /**
@@ -213,7 +215,7 @@ class Account {
                 ++i;
             }
             else {
-                return i, pay;
+                return [i, pay];
             }
         }
 
@@ -230,7 +232,7 @@ class Account {
         this._spent.concat(ret);
         this._pocket.splice(0, total);
 
-        return tot;
+        return ret;
     }
 }
 

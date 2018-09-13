@@ -235,7 +235,7 @@ class BlockChain {
     _writeTransaction(data) {
         let txHandle = this._txdb;
         let txIdxHandle = this._txIndexdb;
-        let spendTxOut = this._spendTxOut;
+        let spendTxOut = this._spendTxOut.bind(this);
         return new Promise(function (resolve, reject) {
             for (let hash of data) {
                 let tx = TxPool.getInstance().findTransaction(hash);
@@ -244,11 +244,9 @@ class BlockChain {
                     [
                         spendTxOut(tx),
                         txHandle.put(hash,
-                                    JSON.stringify(tx))
-                                    .then((data) => console.log(data)),
+                                    JSON.stringify(tx)),
                         txIdxHandle.put(hash,
                                         JSON.stringify(txIndex))
-                                    .then((data) => console.log(data))
                     ]
                 )
                 .then(
@@ -266,7 +264,7 @@ class BlockChain {
     async _spendTxOut(tx) {
         for (let txIn of tx.vin) {
             let originTx = await this._readTransaction(txIn.preTx);
-            let originIdx = await this._readTxIndex(originTx.getHash());
+            let originIdx = await this._readTxIndex(txIn.preTx);
             originIdx.vSpent[txIn.index] = tx.getHash();
             await this._txIndexdb.put(originTx.getHash(), JSON.stringify(originIdx));
         }

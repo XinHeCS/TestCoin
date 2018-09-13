@@ -49,7 +49,7 @@ class Miner {
         console.log('Total mining ' + (new Date().getTime() - startTime) + 'ms');
         // End ming
 
-        // We have mined something and the coi base transaction
+        // We have mined something and the coin base transaction
         // becomes valid now and we can add it into memory pool
         TxPool.getInstance().cacheTransaction(cbTx);
         await this._blcHandle.addBlock(newBlock);
@@ -142,17 +142,7 @@ class Miner {
      * @returns {Array<string>}
      */
     _packTransactions() {
-        let ret = [];
-
-        for (let i = 0; i < 5; ++i) {
-            let hash = TxPool.getInstance().pickHash();
-            if (!hash) {
-                break;
-            }
-            ret.push(hash);
-        }
-
-        return ret;
+        return TxPool.getInstance().pickHash(5);
     }
 }
 

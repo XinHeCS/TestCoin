@@ -1,5 +1,7 @@
 // const {Transaction, TxIn, TxOut, TxIndex} = require('./Transaction/transaction');
 const ECDSA = require('./util/ECDSA');
+const SHA = require('./util/SHA256');
+const TxPool = require('./Transaction/TxPool');
 const Account = require('./wallet/account');
 const BlockChain = require('./core/blockchain');
 const Config = require('./core/coreConfig');
@@ -7,6 +9,7 @@ const Miner = require('./pow/mine');
 const path = require('path');
 const fs = require('fs');
 const util = require('util');
+const { Transaction } = require('./Transaction/transaction');
 
 const chain = new BlockChain(Config.CHAIN_DATABASE,
                              Config.TX_DATABASE,
@@ -22,22 +25,43 @@ account.getAddress()
 //     (data) => console.log(data)
 // );
 
-account.createTransaction(null, [null], [5])
+const miner = new Miner(chain, account);
+
+chain.getTxByHash('cc70b34a728d6e709871b5e1246c7911c348cc6ad018687c4fabea592e9c7b10')
 .then(
-    (data) => console.log(data)
+    (tx) => {
+        chain._spendTxOut(tx);
+        // console.log(tx);
+        // console.log(tx.getHash());
+    }
 );
-
-// account.createAccount('./KeyStore');
-account.refreshBalance()
-.then(
-    (data) => console.log(`You have ${data} tc`),
-    (err) => console.log(err)
-);
-
-
-// const miner = new Miner(chain, account);
 
 // miner.start();
+// miner.start();
+// miner.start()
+// .then(
+//     () => { return account.createTransaction(null, [null], [8]); }
+// )
+// account.createTransaction(null, [null], [8])
+// .then(
+//     (data) => console.log(data)
+// )
+// .then(
+//     () => miner.start()
+// )
+// .then(
+//     () => { return account.refreshBalance() }
+// )
+// .then(
+//     (value) => console.log(`You have ${value} tc`)
+// );
+
+// account.refreshBalance()
+// .then(
+//     (data) => console.log(`You have ${data} tc`),
+//     (err) => console.log(err)
+// );
+
 
 // let {a, b, c} = {a : 1, b : 2, c : 3};
 

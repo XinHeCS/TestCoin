@@ -1,4 +1,5 @@
 const BlockChain = require('./src/core/blockchain');
+const TxPool = require('./src/Transaction/TxPool');
 const Account = require('./src/wallet/account');
 const Config = require('./src/core/coreConfig');
 const Block = require('./src/core/block');
@@ -55,6 +56,7 @@ const account = new Account(chain);
 const miner = new Miner(chain, account);
 
 tesInstance.context.Config = Config;
+tesInstance.context.TxPool = TxPool;
 tesInstance.context.Block = Block;
 tesInstance.context.account = account;
 tesInstance.context.chain = chain;
